@@ -19,12 +19,12 @@ if __name__ == '__main__':
     tf.config.run_functions_eagerly(True)
     max_len = 250000
     #model = create_model(max_len)
-    save_path = '../saved/my_train/model.h5'
+    save_path = 'saved/my_train/model.h5'
     model = tf.keras.models.load_model(save_path)
     print(model.summary())
 
-    #input_file_list = 'DikeDataset/data_label_200.csv'
-    input_file_list = 'DikeDataset/adv_label.csv'
-    #train_model(model, input_file_list, max_len, epoch=5)
-    run_attack(model, input_file_list, max_len)
+    input_file_list = 'DikeDataset/data_label_200.csv'
+    #input_file_list = 'DikeDataset/adv_label.csv'
+    train_model(model, input_file_list, max_len, epoch=30)
+    #run_attack(model, input_file_list, max_len)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
 
-def non_targeted_attack(input_emb, input_label, model, e=0.01, loss_function=tf.keras.losses.BinaryCrossentropy()):
+def non_targeted_attack(input_emb, input_label, model, e, loss_function=tf.keras.losses.BinaryCrossentropy()):
     # print(input.shape)
     input_emb = tf.convert_to_tensor(input_emb)
     input_label = tf.convert_to_tensor(input_label)
@@ -60,6 +60,7 @@ def get_input_from_emb(input, inp_emb, neigh_model):
 
 
 def modify_the_padding_section(input, perturb, pad_idx, pad_len):
+    #print("Perturb matrix: ", perturb[0][pad_idx : pad_idx+pad_len])
     for idx in range(pad_idx, pad_idx + pad_len):
         input[0][idx] += perturb[0][idx]
     return input
@@ -70,7 +71,7 @@ def add_initial_padding_randomly(input, pad_idx, pad_len):
     #print(rand_arr)
     input[0][pad_idx : pad_idx+pad_len] = rand_arr
     cosine_sim = np.dot(org[0], input[0])/(np.linalg.norm(org[0])*np.linalg.norm(input[0]))
-    print("Cosine Similarity: ", cosine_sim)
+    #print("Cosine Similarity: ", cosine_sim)
     return input
 
 

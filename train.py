@@ -28,7 +28,7 @@ def train_model(model, input_file_list, max_len, epoch):
     x_train, x_test, y_train, y_test = utils.train_test_split(data, label)
 
     #epoch = 20
-    save_path = '../saved/my_train/model.h5'
+    save_path = 'saved/my_train/model.h5'
     prev_acc = 0
 
     model.fit(x_train, y_train, batch_size=64)
