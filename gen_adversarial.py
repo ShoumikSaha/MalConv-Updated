@@ -1,3 +1,5 @@
+from random import random
+
 import tensorflow as tf
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
@@ -20,7 +22,13 @@ def non_targeted_attack(input_emb, input_label, model, e=0.01, loss_function=tf.
         d7 = model.layers[8](d6)
         prediction = model.layers[9](d7)
 
-        print("Prediction: ", prediction[0][0], "Input Label: ", input_label)
+        print("Prediction: ", prediction, "Input Label: ", input_label)
+        """
+        if(prediction.numpy()[0][0]==1.0):
+            prediction = [[0.9]]
+            prediction = tf.convert_to_tensor(prediction)
+            print("New Prediction: ", prediction)
+        """
         loss = loss_function(input_label, prediction)
 
     gradient = g.gradient(loss, input_emb)
@@ -56,6 +64,15 @@ def modify_the_padding_section(input, perturb, pad_idx, pad_len):
         input[0][idx] += perturb[0][idx]
     return input
 
+def add_initial_padding_randomly(input, pad_idx, pad_len):
+    org = input.copy()
+    rand_arr = np.random.randint(0, 255, pad_len)
+    #print(rand_arr)
+    input[0][pad_idx : pad_idx+pad_len] = rand_arr
+    cosine_sim = np.dot(org[0], input[0])/(np.linalg.norm(org[0])*np.linalg.norm(input[0]))
+    print("Cosine Similarity: ", cosine_sim)
+    return input
+
 
 def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, iterations, e,
                      loss_function=tf.keras.losses.BinaryCrossentropy(), max_len=250000):
@@ -74,6 +91,7 @@ def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, it
     # print("Initial Prediction: ", model.layers[2](tf.convert_to_tensor(inp_emb)))
     prev_pred = model.predict(input)
     print("Initial prediction: ", prev_pred)
+    input = add_initial_padding_randomly(input, pad_idx, pad_len)
     for i in range(iterations):
         print("Iteration ", i)
         # inp_emb = get_emb(model, input)
@@ -89,7 +107,7 @@ def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, it
         print("Prediction: ", new_pred)
         if (new_pred <= 0.5):
             break
-        elif (new_pred < prev_pred):
+        elif (new_pred != prev_pred):
             prev_pred = new_pred
         else:
             break
