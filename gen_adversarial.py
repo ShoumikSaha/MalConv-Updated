@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from sklearn.neighbors import NearestNeighbors
 
 def non_targeted_attack(input_emb, input_label, model, e=0.01, loss_function = tf.keras.losses.BinaryCrossentropy()):
     #print(input.shape)
@@ -29,7 +30,7 @@ def non_targeted_attack(input_emb, input_label, model, e=0.01, loss_function = t
 
 def get_emb(model, input):
     emb_layer = model.layers[1]
-    emb_weight = emb_layer.get_weights()[0]
+
     #inp2emb = tf.keras.backend.function([model.input] + [tf.keras.backend.learning_phase()], [emb_layer.output])  # [function] Map sequence to embedding
     #inp_emb = np.squeeze(np.array(inp2emb([input, False])), 0)
 
@@ -37,9 +38,22 @@ def get_emb(model, input):
     print("Input Embedding: ", inp_emb.shape, inp_emb)
     return inp_emb
 
+def get_input_from_emb(input, inp_emb, neigh_model):
+    out = input.copy()
+    print(inp_emb.shape)
+    for idx in range(len(inp_emb)):
+        target = inp_emb[idx].reshape(1, -1)
+        best_idx = neigh_model.kneighbors(target, 1, False)[0][0]
+        out[0][idx] = best_idx
+    return out
+
+
+
+
 def iterative_attack(attack, input, input_label, model, iterations, e, loss_function=tf.keras.losses.BinaryCrossentropy()):
     #adv_input = input.copy()
     inp_emb = get_emb(model, input)
+    print("Input Embedding: ", inp_emb.shape, inp_emb)
     #print("Initial Prediction: ", model.layers[2](tf.convert_to_tensor(inp_emb)))
     for i in range(iterations):
         print("Iteration ", i)
@@ -53,6 +67,14 @@ def iterative_attack(attack, input, input_label, model, iterations, e, loss_func
     #adv_input = np.clip(adv_input, 0, 1)
     #implement knn to convert the inp_emb to adv_input
     #print("Final Prediction: ", model.layers[2]((tf.convert_to_tensor(inp_emb))))
-    return inp_emb
+    emb_layer = model.layers[1]
+    emb_weight = emb_layer.get_weights()[0]
+    neigh = NearestNeighbors(n_neighbors=1).fit(emb_weight)
+
+    adv_inp = get_input_from_emb(input, inp_emb.numpy()[0], neigh)
+    adv_predict = model.predict(adv_inp)
+    print("Adversarial Prediction: ", adv_predict)
+
+    return adv_inp
 
 
