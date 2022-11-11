@@ -6,6 +6,7 @@ from malconv import create_model
 from train import train_model
 from run_attack import run_attack
 import tensorflow as tf
+tf.config.run_functions_eagerly(True)
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
@@ -15,7 +16,6 @@ def print_hi(name):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     print_hi('PyCharm')
-
     tf.config.run_functions_eagerly(True)
     max_len = 250000
     #model = create_model(max_len)
