@@ -73,7 +73,7 @@ def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, it
     # print("Input Embedding: ", inp_emb.shape, inp_emb)
     # print("Initial Prediction: ", model.layers[2](tf.convert_to_tensor(inp_emb)))
     prev_pred = model.predict(input)
-
+    print("Initial prediction: ", prev_pred)
     for i in range(iterations):
         print("Iteration ", i)
         # inp_emb = get_emb(model, input)
@@ -86,6 +86,7 @@ def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, it
 
         input = get_input_from_emb(input, inp_emb.numpy()[0], neigh)
         new_pred = model.predict(input)
+        print("Prediction: ", new_pred)
         if (new_pred <= 0.5):
             break
         elif (new_pred < prev_pred):
