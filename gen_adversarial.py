@@ -48,10 +48,19 @@ def get_input_from_emb(input, inp_emb, neigh_model):
     return out
 
 
+def modify_the_padding_section(input, perturb, pad_idx, pad_len):
+    for idx in range(pad_idx, pad_idx+pad_len):
+        input[0][idx] += perturb[0][idx]
+    return input
 
-
-def iterative_attack(attack, input, input_label, model, iterations, e, loss_function=tf.keras.losses.BinaryCrossentropy()):
+def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, iterations, e, loss_function=tf.keras.losses.BinaryCrossentropy(), max_len=250000):
     #adv_input = input.copy()
+    print("Pad Index: ", pad_idx)
+    pad_len = max(min(int(pad_idx * pad_percent), max_len - pad_idx), 0)
+    print("Pad Length: ", pad_len)
+    if(pad_len<=0):
+        print("Exceed length!")
+        return input
     inp_emb = get_emb(model, input)
     print("Input Embedding: ", inp_emb.shape, inp_emb)
     #print("Initial Prediction: ", model.layers[2](tf.convert_to_tensor(inp_emb)))
@@ -59,7 +68,9 @@ def iterative_attack(attack, input, input_label, model, iterations, e, loss_func
         print("Iteration ", i)
         #inp_emb = get_emb(model, input)
         perturb = attack(inp_emb, input_label, model, e, loss_function)
-        inp_emb += perturb
+        #inp_emb += perturb
+        inp_emb = modify_the_padding_section(inp_emb.numpy(), perturb, pad_idx, pad_len)
+        inp_emb = tf.convert_to_tensor(inp_emb)
         print("Input Embedding: ", inp_emb.shape, inp_emb)
         #inp_emb = np.clip(inp_emb, input - e, input + e)
         #adv_input += n
