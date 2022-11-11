@@ -31,18 +31,23 @@ def train_model(model, input_file_list, max_len, epoch):
     save_path = 'saved/my_train/model.h5'
     prev_acc = 0
 
-    model.fit(x_train, y_train, batch_size=64)
+    history = model.fit(x_train, y_train, batch_size=64)
+    prev_loss = history.history['loss']
     model.save(save_path)
 
     for i in range(epoch):
         print("Epoch ", i + 1)
         model = tf.keras.models.load_model(save_path)
-        model.fit(x_train, y_train, batch_size=64)
+        history = model.fit(x_train, y_train, batch_size=64)
+        loss = history.history['loss']
         y_pred = model.predict(x_test)
         acc = get_acc(y_pred, y_test)
         print(acc)
-        if acc > prev_acc:
+        if acc >= prev_acc and loss < prev_loss:
             model.save(save_path)
+            prev_acc = acc
+            prev_loss = loss
+            print("New model saved!")
 
     y_pred = model.predict(x_test)
     print(get_acc(y_pred, y_test))
