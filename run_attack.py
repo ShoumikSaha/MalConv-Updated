@@ -18,8 +18,8 @@ def run_attack(model, input_file_list, max_len):
         input = np.reshape(input, (1, max_len))
         #print(input.shape)
 
-        print(label[i])
-        adv_sample, is_added = iterative_attack(non_targeted_attack, input, len_list[i], pad_percent, [[1.0]], model, 5, 0.5)
+        #print(label[i])
+        adv_sample, is_added = iterative_attack(non_targeted_attack, input, len_list[i], pad_percent, [[1.0]], model, 5, 0.1)
         pred_score = model.predict(adv_sample)
         print(pred_score)
         if(pred_score<=0.5): evasion_count +=1
