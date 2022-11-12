@@ -24,8 +24,8 @@ if __name__ == '__main__':
     print(model.summary())
 
     input_file_list = 'DikeDataset/data_label_200.csv'
-    adv_file_list = 'DikeDataset/adv_label.csv'
+    adv_file_list = 'DikeDataset/adv_label_new.csv'
     #train_model(model, input_file_list, max_len, epoch=30)
-    #run_attack(model, adv_file_list, max_len)
+    run_attack(model, adv_file_list, max_len)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
