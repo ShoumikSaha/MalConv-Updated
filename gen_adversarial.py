@@ -28,10 +28,11 @@ def non_targeted_attack(input_emb, input_label, model, e, loss_function=tf.keras
             prediction = [[0.9]]
             prediction = tf.convert_to_tensor(prediction)
             print("New Prediction: ", prediction)
-        """
+        
         if (prediction.numpy()[0][0] == 1.0):
             input_label = [[0.9]]
             input_label = tf.convert_to_tensor(input_label)
+        """
         loss = loss_function(input_label, prediction)
 
     gradient = g.gradient(loss, input_emb)
@@ -113,10 +114,13 @@ def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, it
     prev_pred = model.predict(input)
     print("Initial prediction: ", prev_pred)
     input = add_initial_padding_randomly(input, pad_idx, pad_len)
+    #prev_pred = model.predict(input)
+    #print("Random padding prediction: ", prev_pred)
     for i in range(iterations):
         print("Iteration ", i)
         # inp_emb = get_emb(model, input)
         inp_emb = get_emb(model, input)
+        #print("Input Embedding: ", inp_emb.shape)
         perturb = attack(inp_emb, input_label, model, e, loss_function)
         # inp_emb += perturb
         inp_emb = modify_the_padding_section(inp_emb.numpy(), perturb, pad_idx, pad_len)
@@ -127,12 +131,16 @@ def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, it
         input = get_input_from_emb_by_matrix(inp_emb, emb_layer, max_len)
         new_pred = model.predict(input)
         print("Prediction: ", new_pred)
-        if (new_pred <= 0.5):
+        if (new_pred < 0.5):
             break
-        elif (new_pred != prev_pred):
-            prev_pred = new_pred
+
+        elif (new_pred == prev_pred):
+            #prev_pred = new_pred
+            if (pad_percent<0.25): return iterative_attack(non_targeted_attack, input, pad_idx, pad_percent*1.2, [[1.0]], model, 50, e*1.5)
+            else: break
         else:
-            break
+            prev_pred = new_pred
+
         # inp_emb = np.clip(inp_emb, input - e, input + e)
         # adv_input += n
         # adv_input = np.clip(adv_input, input - e, input + e)
