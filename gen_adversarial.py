@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
 
-def non_targeted_attack(input_emb, input_label, model, e, loss_function=tf.keras.losses.BinaryCrossentropy()):
+def fgsm_attack(input_emb, input_label, model, e, loss_function=tf.keras.losses.BinaryCrossentropy()):
     # print(input.shape)
     input_emb = tf.convert_to_tensor(input_emb)
     input_label = tf.convert_to_tensor(input_label)
@@ -136,7 +136,7 @@ def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, it
 
         elif (new_pred == prev_pred):
             #prev_pred = new_pred
-            if (pad_percent<0.25): return iterative_attack(non_targeted_attack, input, pad_idx, pad_percent*1.2, [[1.0]], model, 50, e*1.5)
+            if (pad_percent<0.25): return iterative_attack(fgsm_attack, input, pad_idx, pad_percent*1.2, [[1.0]], model, 50, e*1.5)
             else: break
         else:
             prev_pred = new_pred
