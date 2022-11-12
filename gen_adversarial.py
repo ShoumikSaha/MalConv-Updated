@@ -29,6 +29,9 @@ def non_targeted_attack(input_emb, input_label, model, e, loss_function=tf.keras
             prediction = tf.convert_to_tensor(prediction)
             print("New Prediction: ", prediction)
         """
+        if (prediction.numpy()[0][0] == 1.0):
+            input_label = [[0.9]]
+            input_label = tf.convert_to_tensor(input_label)
         loss = loss_function(input_label, prediction)
 
     gradient = g.gradient(loss, input_emb)
@@ -48,14 +51,31 @@ def get_emb(model, input):
     # print("Input Embedding: ", inp_emb.shape, inp_emb)
     return inp_emb
 
+def get_input_from_emb_by_matrix(inp_emb, emb_layer, max_len):
+    emb_matrix = tf.linalg.matmul(inp_emb, tf.linalg.pinv(emb_layer.get_weights()[0]))
+    #out = np.zeros((max_len, ))
+    #out = np.argmax(emb_matrix.numpy(), axis=0)
+    emb_matrix = emb_matrix.numpy()
+    print(emb_matrix.shape)
+    out = np.zeros((max_len))
+    for i in range(emb_matrix.shape[1]):
+        max_idx = np.argmax(emb_matrix[0][i])
+        out[i] = max_idx
+    out = np.reshape(out, (1, -1))
+    print(out.shape)
+    return out
 
 def get_input_from_emb(input, inp_emb, neigh_model):
     out = input.copy()
     # print(inp_emb.shape)
+    #out = tf.linalg.matmul(inp_emb, tf.linalg.pinv(emb_layer.get_weights()[0]))
+    #print(inp_emb.shape, out.shape)
+
     for idx in range(len(inp_emb)):
         target = inp_emb[idx].reshape(1, -1)
         best_idx = neigh_model.kneighbors(target, 1, False)[0][0]
         out[0][idx] = best_idx
+
     return out
 
 
@@ -103,7 +123,8 @@ def iterative_attack(attack, input, pad_idx, pad_percent, input_label, model, it
         inp_emb = tf.convert_to_tensor(inp_emb)
         # print("Input Embedding: ", inp_emb.shape, inp_emb)
 
-        input = get_input_from_emb(input, inp_emb.numpy()[0], neigh)
+        #input = get_input_from_emb(input, inp_emb.numpy()[0], neigh)
+        input = get_input_from_emb_by_matrix(inp_emb, emb_layer, max_len)
         new_pred = model.predict(input)
         print("Prediction: ", new_pred)
         if (new_pred <= 0.5):

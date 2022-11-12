@@ -7,6 +7,7 @@ from train import train_model
 from run_attack import run_attack
 import tensorflow as tf
 tf.config.run_functions_eagerly(True)
+tf.data.experimental.enable_debug_mode()
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
