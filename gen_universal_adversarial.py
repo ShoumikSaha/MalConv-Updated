@@ -4,7 +4,10 @@ from sklearn.neighbors import NearestNeighbors
 
 
 def fgsm_attack_universal(input_emb, input_label, model, e, loss_function=tf.keras.losses.BinaryCrossentropy()):
-    # print(input.shape)
+    """
+        This function takes in the embedding of input, and calculates the gradient of the loss.
+        But it just takes the sign of the gradient and multiply with the step size e
+        """
     input_emb = tf.convert_to_tensor(input_emb)
     input_label = tf.convert_to_tensor(input_label)
     tf.config.run_functions_eagerly(True)
@@ -20,7 +23,7 @@ def fgsm_attack_universal(input_emb, input_label, model, e, loss_function=tf.ker
         d7 = model.layers[8](d6)
         prediction = model.layers[9](d7)
 
-        print("Prediction: ", prediction, "Input Label: ", input_label)
+        #print("Prediction: ", prediction, "Input Label: ", input_label)
         loss = loss_function(input_label, prediction)
 
     gradient = g.gradient(loss, input_emb)
@@ -31,17 +34,26 @@ def fgsm_attack_universal(input_emb, input_label, model, e, loss_function=tf.ker
 
 
 def get_emb(model, input):
+    """
+    Takes in the input and returns the embedding of the input
+    :param model:
+    :param input: input from problem space
+    :return: embedding from feature space
+    """
     emb_layer = model.layers[1]
-
-    # inp2emb = tf.keras.backend.function([model.input] + [tf.keras.backend.learning_phase()], [emb_layer.output])  # [function] Map sequence to embedding
-    # inp_emb = np.squeeze(np.array(inp2emb([input, False])), 0)
-
     inp_emb = emb_layer(tf.convert_to_tensor(input))
     # print("Input Embedding: ", inp_emb.shape, inp_emb)
     return inp_emb
 
 
 def get_input_from_emb_by_matrix(inp_emb, emb_layer, max_len):
+    """
+    Takes in the input embedding and finds the input by using the inverse matrix of the embedding layer
+    :param inp_emb: Embedding of the input
+    :param emb_layer: The embedding layer of the model (2nd layer)
+    :param max_len:
+    :return: Corresponding input for the embedding
+    """
     emb_matrix = tf.linalg.matmul(inp_emb, tf.linalg.pinv(emb_layer.get_weights()[0]))
     # out = np.zeros((max_len, ))
     # out = np.argmax(emb_matrix.numpy(), axis=0)
@@ -57,6 +69,13 @@ def get_input_from_emb_by_matrix(inp_emb, emb_layer, max_len):
 
 
 def get_input_from_emb(input, inp_emb, neigh_model):
+    """
+    Takes in the input embedding and finds the input by using the KNN model
+    :param input:
+    :param inp_emb:
+    :param neigh_model: The KNN model that has learnt the mapping from embedding to input
+    :return: Corresponding input for the embedding
+    """
     out = input.copy()
     # print(inp_emb.shape)
     # out = tf.linalg.matmul(inp_emb, tf.linalg.pinv(emb_layer.get_weights()[0]))
@@ -71,18 +90,41 @@ def get_input_from_emb(input, inp_emb, neigh_model):
 
 
 def modify_the_padding_section(input, perturb, pad_idx, pad_len):
+    """
+    Modifies the padding section of the input according to the perturb
+    :param input:
+    :param perturb: The signed perturb got from the gradient
+    :param pad_idx: The length of the input
+    :param pad_len: The length of the perturb
+    :return:  Modified input
+    """
     # print("Perturb matrix: ", perturb[0][pad_idx : pad_idx+pad_len])
     for idx in range(pad_idx, pad_idx + pad_len):
         input[0][idx] += perturb[0][idx]
     return input
 
 def modify_the_padding_section_universal(input, perturb, pad_idx, pad_len):
+    """
+    Modifies the padding section of the input with common perturb
+    :param input:
+    :param perturb: The common or universal perturb
+    :param pad_idx: The length of the input
+    :param pad_len: The length of the perturb
+    :return: Modified input
+    """
     # print("Perturb matrix: ", perturb[0][pad_idx : pad_idx+pad_len])
     for idx in range(pad_idx, pad_idx + pad_len):
         input[0][idx] += perturb[0][pad_idx-idx]
     return input
 
 def add_patch_end_of_file(input, patch, pad_idx, pad_len, max_len):
+    """
+    Adds the perturb (or patch) at the end of the file
+    :param input:
+    :param pad_idx: The length of the input
+    :param pad_len: The length of the perturb
+    :return: Modified input
+    """
     pad_len = max(min(pad_len, max_len-pad_idx),0)
     #print(input.shape, patch.shape, pad_idx, pad_len)
     input[0][pad_idx:pad_idx+pad_len] = patch[:pad_len]
@@ -90,6 +132,12 @@ def add_patch_end_of_file(input, patch, pad_idx, pad_len, max_len):
     return input, pad_len
 
 def get_common_perturb(perturbations, pad_len):
+    """
+    Takes in the perturbations for all files and returns the mean of all perturbations
+    :param perturbations: List of all perturbations
+    :param pad_len: Perturbation length
+    :return: Mean perturbation
+    """
     for perturb in perturbations:
         #perturb = perturb.numpy()
         a = np.zeros((pad_len-perturb.shape[0], 8))

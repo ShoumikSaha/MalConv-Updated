@@ -9,14 +9,9 @@ import tensorflow as tf
 tf.config.run_functions_eagerly(True)
 tf.data.experimental.enable_debug_mode()
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
-
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
     tf.config.run_functions_eagerly(True)
     max_len = 250000
     #model = create_model(max_len)
@@ -26,6 +21,8 @@ if __name__ == '__main__':
 
     input_file_list = 'DikeDataset/data_label_200.csv'
     adv_file_list = 'DikeDataset/adv_label_new.csv'
+
+    ##Use the comment sign for train or attack
     #train_model(model, input_file_list, max_len, epoch=30)
     run_attack(model, adv_file_list, max_len)
 

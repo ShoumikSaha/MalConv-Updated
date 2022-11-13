@@ -18,6 +18,7 @@ def run_attack(model, input_file_list, max_len):
     #patch_emb = get_emb(model, tf.convert_to_tensor(np.random.randint(0, 255, max_len)))
     #patch_emb = patch_emb[:, 0:20000, :]
 
+    ##The next section is for universal attack
     adv_data, isSuccess = iterative_attack_universal(fgsm_attack_universal, data[0:200], len_list[0:200], pad_len, [[1.0]], model, iterations=100, e=0.5)
     print(adv_data.shape)
     for i, adv in enumerate(adv_data):
@@ -27,6 +28,8 @@ def run_attack(model, input_file_list, max_len):
         pred = model.predict(adv)
         print(pred)
         if(pred<0.5):   evasion_count += 1
+
+    ##The next section is for normal attack
     """
     for i, input in enumerate (data):
         print("Attacking on ", filenames[i])
