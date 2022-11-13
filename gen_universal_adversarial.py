@@ -76,9 +76,15 @@ def modify_the_padding_section(input, perturb, pad_idx, pad_len):
         input[0][idx] += perturb[0][idx]
     return input
 
+def modify_the_padding_section_universal(input, perturb, pad_idx, pad_len):
+    # print("Perturb matrix: ", perturb[0][pad_idx : pad_idx+pad_len])
+    for idx in range(pad_idx, pad_idx + pad_len):
+        input[0][idx] += perturb[0][pad_idx-idx]
+    return input
+
 def add_patch_end_of_file(input, patch, pad_idx, pad_len, max_len):
     pad_len = max(min(pad_len, max_len-pad_idx),0)
-    print(input.shape, patch.shape, pad_idx, pad_len)
+    #print(input.shape, patch.shape, pad_idx, pad_len)
     input[0][pad_idx:pad_idx+pad_len] = patch[:pad_len]
 
     return input, pad_len
@@ -86,33 +92,70 @@ def add_patch_end_of_file(input, patch, pad_idx, pad_len, max_len):
 def get_common_perturb(perturbations, pad_len):
     for perturb in perturbations:
         #perturb = perturb.numpy()
-        a = np.zeros(pad_len-perturb.shape[1])
-        perturb = np.concatenate(perturb, a)
-        print(perturb.shape)
+        a = np.zeros((pad_len-perturb.shape[0], 8))
+        print("Perturb: ", perturb.shape, "a: ", a.shape)
+        perturb = np.concatenate((perturb, a))
+        print("Perturb shape after concat:", perturb.shape)
     perturbations = np.array(perturbations)
-    print(perturbations.shape)
+    print("Perturbations: ", perturbations.shape)
+    return np.average(perturbations, axis=0)
+
 
 
 
 def iterative_attack_universal(attack, inputs, pad_idx, pad_len, input_label, model, iterations, e,
                      loss_function=tf.keras.losses.BinaryCrossentropy(), max_len=250000):
     emb_layer = model.layers[1]
-    patch = np.random.randint(0, 255, pad_len)
+    print("Iteration ", iterations)
     perturbations = []
+    prev_preds = []
     for i, input in enumerate(inputs):
         input = np.reshape(input, (1, max_len))
-        input, pad_len_i = add_patch_end_of_file(input, patch, pad_idx[i], pad_len, max_len)
+        pad_len_i = max(min(pad_len, max_len - pad_idx[i]), 0)
+        #input, pad_len_i = add_patch_end_of_file(input, patch, pad_idx[i], pad_len, max_len)
         #print(input.shape)
         inp_emb = get_emb(model, input)
+        #inp_emb = modify_the_padding_section_universal(inp_emb.numpy(), patch_emb, pad_idx[i], pad_len_i)
         #print(inp_emb.shape)
         perturb = attack(inp_emb, input_label, model, e)
-        perturbations.append(perturb[pad_idx[i]:pad_idx[i]+pad_len_i])
+        #print("Perturb: ", perturb.shape)
+        perturbations.append(perturb[0][pad_idx[i]:pad_idx[i]+pad_len_i])
         inp_emb = modify_the_padding_section(inp_emb.numpy(), perturb, pad_idx[i], pad_len_i)
         inp_emb = tf.convert_to_tensor(inp_emb)
         input = get_input_from_emb_by_matrix(inp_emb, emb_layer, max_len)
+        prev_pred = model.predict(input)
+        print("Prev Prediction: ", prev_pred)
+        prev_preds.append((prev_pred))
+
+    common_perturb = get_common_perturb(perturbations, pad_len)
+    common_perturb = np.reshape(common_perturb, (1, pad_len, 8))
+    print("Common Perturbation: ", common_perturb.shape, common_perturb)
+    print("Non zero count in comm pert: ", np.count_nonzero(common_perturb))
+
+    new_preds = []
+    for i, input in enumerate(inputs):
+        input = np.reshape(input, (1, max_len))
+        inp_emb = get_emb(model, input)
+        pad_len_i = max(min(pad_len, max_len-pad_idx[i]),0)
+        inp_emb = modify_the_padding_section_universal(inp_emb.numpy(), common_perturb, pad_idx[i], pad_len_i)
+        inp_emb = tf.convert_to_tensor(inp_emb)
+        input = get_input_from_emb_by_matrix(inp_emb, emb_layer, max_len)
+        inputs[i] = input
         new_pred = model.predict(input)
-        print("Prediction: ", new_pred)
+        print("New Prediction: ", new_pred)
+        new_preds.append(new_pred)
 
-    get_common_perturb(perturbations, pad_len)
+    avg_prev_pred = sum(prev_preds)/len(prev_preds)
+    avg_new_pred = sum(new_preds)/len(new_preds)
 
-    return input, True
+    print("Avg prev pred: ", avg_prev_pred, "Avg new pred: ", avg_new_pred)
+    if(avg_new_pred<0.5):
+        return inputs, True
+    elif(iterations>=0):
+        iterative_attack_universal(attack, inputs, pad_idx, pad_len, input_label, model, iterations-1, e)
+    else:
+        return inputs, False
+
+
+    return inputs, True
+

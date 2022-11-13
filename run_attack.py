@@ -3,7 +3,7 @@ import utils
 import pandas as pd
 import tensorflow as tf
 from gen_adversarial import fgsm_attack, iterative_attack
-from gen_universal_adversarial import fgsm_attack_universal, iterative_attack_universal
+from gen_universal_adversarial import fgsm_attack_universal, iterative_attack_universal, get_emb
 import numpy as np
 
 def run_attack(model, input_file_list, max_len):
@@ -15,8 +15,18 @@ def run_attack(model, input_file_list, max_len):
     evasion_count = 0
     total_count = 0
     pad_len = 20000
-    iterative_attack_universal(fgsm_attack_universal, data[0:20], len_list[0:20], pad_len, [[1.0]], model, iterations=1, e=0.5)
+    #patch_emb = get_emb(model, tf.convert_to_tensor(np.random.randint(0, 255, max_len)))
+    #patch_emb = patch_emb[:, 0:20000, :]
 
+    adv_data, isSuccess = iterative_attack_universal(fgsm_attack_universal, data[0:200], len_list[0:200], pad_len, [[1.0]], model, iterations=100, e=0.5)
+    print(adv_data.shape)
+    for i, adv in enumerate(adv_data):
+        adv = np.reshape(adv, (1, max_len))
+        print(adv.shape)
+        adv = tf.convert_to_tensor(adv)
+        pred = model.predict(adv)
+        print(pred)
+        if(pred<0.5):   evasion_count += 1
     """
     for i, input in enumerate (data):
         print("Attacking on ", filenames[i])
@@ -31,6 +41,6 @@ def run_attack(model, input_file_list, max_len):
         if(is_added==True): total_count += 1
         if(i==50):  break
     """
-
+    total_count = adv_data.shape[0]
     print("Total: ", total_count, "Evaded: ", evasion_count)
     print("Evasion Accuracy: ", evasion_count/total_count)
