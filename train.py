@@ -4,6 +4,7 @@ import utils
 import pandas as pd
 import tensorflow as tf
 import keras as k
+import gc
 
 def get_acc(y_pred, y_test):
     acc = 0
@@ -36,6 +37,10 @@ def train_model(model, input_file_list, max_len, epoch):
     model.save(save_path)
 
     for i in range(epoch):
+        tf.keras.backend.clear_session()
+        del model
+        gc.collect()
+
         print("Epoch ", i + 1)
         model = tf.keras.models.load_model(save_path)
         history = model.fit(x_train, y_train, batch_size=64)

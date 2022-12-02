@@ -18,4 +18,8 @@ Scipy 1.7.3
 
 Tensorflow 2.9.1
 
+matplotlib
+
+IPython
+
 This porject has been testes on with the above-mentioned package versions!
