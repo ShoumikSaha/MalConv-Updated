@@ -76,6 +76,8 @@ def get_input_from_emb(input, inp_emb, neigh_model):
     :param neigh_model: The KNN model that has learnt the mapping from embedding to input
     :return: Corresponding input for the embedding
     """
+    print(input.shape)
+    print(inp_emb.shape)
     out = input.copy()
     # print(inp_emb.shape)
     # out = tf.linalg.matmul(inp_emb, tf.linalg.pinv(emb_layer.get_weights()[0]))
@@ -156,8 +158,8 @@ def get_common_perturb(perturbations, pad_len):
 def iterative_attack_universal(attack, inputs, pad_idx, pad_len, input_label, model, iterations, e,
                      loss_function=tf.keras.losses.BinaryCrossentropy(), max_len=250000):
     emb_layer = model.layers[1]
-    #emb_weight = emb_layer.get_weights()[0]
-    #neigh = NearestNeighbors(n_neighbors=1).fit(emb_weight)
+    emb_weight = emb_layer.get_weights()[0]
+    neigh = NearestNeighbors(n_neighbors=1).fit(emb_weight)
 
     print("Iteration ", iterations)
     perturbations = []
@@ -185,18 +187,29 @@ def iterative_attack_universal(attack, inputs, pad_idx, pad_len, input_label, mo
     common_perturb = np.reshape(common_perturb, (1, pad_len, 8))
     print("Common Perturbation: ", common_perturb.shape, common_perturb)
     print("Non zero count in comm pert: ", np.count_nonzero(common_perturb))
+    common_perturb_input = get_input_from_emb(input[:, 0:20000], common_perturb[0], neigh)
+    print(common_perturb_input.shape)
+    print("Common perturb input: ", common_perturb_input)
 
     new_preds = []
     for i, input in enumerate(inputs):
-        input = np.reshape(input, (1, max_len))
-        inp_emb = get_emb(model, input)
-        pad_len_i = max(min(pad_len, max_len-pad_idx[i]),0)
-        inp_emb = modify_the_padding_section_universal(inp_emb.numpy(), common_perturb, pad_idx[i], pad_len_i)
-        inp_emb = tf.convert_to_tensor(inp_emb)
-        input = get_input_from_emb_by_matrix(inp_emb, emb_layer, max_len)
+
+        input = np.reshape(input, (1, -1))
+        input = input[:, 0:pad_idx[i]]
+        print(input.shape)
+        pad_len_i = max(min(pad_len, max_len - pad_idx[i]), 0)
+        input = np.concatenate((input, common_perturb_input[:, 0:pad_len_i]), axis=1)
+        print(input.shape)
+        #inp_emb = get_emb(model, input)
+        #pad_len_i = max(min(pad_len, max_len-pad_idx[i]),0)
+        #inp_emb = modify_the_padding_section_universal(inp_emb.numpy(), common_perturb, pad_idx[i], pad_len_i)
+        #inp_emb = tf.convert_to_tensor(inp_emb)
+        #input = get_input_from_emb_by_matrix(inp_emb, emb_layer, max_len)
         #input = get_input_from_emb(input, inp_emb.numpy()[0], neigh)
-        inputs[i] = input
-        new_pred = model.predict(input)
+        a = np.zeros((1, max_len - input.shape[1]))
+        inputs[i] = np.concatenate((input, a), axis=1)
+        print(inputs[i].shape)
+        new_pred = model.predict(np.reshape(inputs[i], (1, max_len)))
         print("New Prediction: ", new_pred)
         new_preds.append(new_pred)
 
@@ -206,11 +219,11 @@ def iterative_attack_universal(attack, inputs, pad_idx, pad_len, input_label, mo
     print("Avg prev pred: ", avg_prev_pred, "Avg new pred: ", avg_new_pred)
     #if(avg_new_pred<0.5):
         #return inputs, True, common_perturb
-    if(iterations>=0):
+    if(iterations>0):
         iterative_attack_universal(attack, inputs, pad_idx, pad_len, input_label, model, iterations-1, e)
     else:
-        return inputs, False, common_perturb[0]
+        return inputs, False, common_perturb_input
 
 
-    return inputs, True, common_perturb[0]
+    return inputs, True, common_perturb_input
 
