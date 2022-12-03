@@ -5,6 +5,7 @@ import train
 from malconv import create_model
 from train import train_model
 from run_attack import run_attack
+from run_gradcam import run_gradcam_test
 import tensorflow as tf
 tf.config.run_functions_eagerly(True)
 tf.data.experimental.enable_debug_mode()
@@ -19,11 +20,16 @@ if __name__ == '__main__':
     model = tf.keras.models.load_model(save_path)
     print(model.summary())
 
-    input_file_list = 'DikeDataset/data_label_200.csv'
+    # test gradcam with model
+    run_gradcam_test(model)
+
+    #input_file_list = 'DikeDataset/data_label_200.csv'
     adv_file_list = 'DikeDataset/adv_label_new.csv'
+    input_file_list = 'training_datasets/output/combined.csv'
+
 
     ##Use the comment sign for train or attack
-    #train_model(model, input_file_list, max_len, epoch=30)
-    run_attack(model, adv_file_list, max_len)
+   # train_model(model, input_file_list, max_len, epoch=30)
+    #run_attack(model, adv_file_list, max_len)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

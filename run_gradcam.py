@@ -1,5 +1,7 @@
+from preprocess import preprocess
 import numpy as np
 import tensorflow as tf
+import pandas as pd
 from tensorflow import keras
 
 # Display
@@ -29,6 +31,19 @@ def get_img_array(img_path, size):
     # of size (1, 299, 299, 3)
     array = np.expand_dims(array, axis=0)
     return array
+
+def get_img_array_from_exe(input_file_list, size, max_len):
+    array_list = []
+
+    df = pd.read_csv(input_file_list, header=None)
+    filenames, label = df[0].values, df[1].values
+    data, len_list = preprocess(filenames, max_len)
+
+    for i, input in enumerate(data[0::1]):
+        input = np.reshape(input, (1, -1))
+        array_list.append(input)
+
+    return array_list
 
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
     # First, we create a model that maps the input image to the activations
@@ -113,3 +128,18 @@ def run_gradcam(img_path, img_size, model, last_conv_layer_name):
 
     # Display superimposed image
     save_and_display_gradcam(img_path, heatmap)
+
+def run_gradcam_test(model):
+    size = (1, 250000)
+    array_list = get_img_array_from_exe('output/malware.csv', size, 250000)
+    make_gradcam_heatmap(array_list[0], model, 'dense_1')
+
+#def run_test():
+#    size = (1, 250000)
+#    array_list = get_img_array_from_exe('output/malware.csv', size, 250000)
+#    img = keras.utils.array_to_img(array_list[0])
+#    img.show()
+
+
+#if __name__ == '__main__':
+#    run_test()
