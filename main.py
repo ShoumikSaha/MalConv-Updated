@@ -7,7 +7,7 @@ import train
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 from malconv import create_model
-from train import train_model
+from train import train_model, train_gen_wrapper
 from run_attack import run_attack
 from vit_model import run_model_ablation, train_model
 import tensorflow as tf
@@ -31,6 +31,7 @@ if __name__ == '__main__':
 
     ##Use the comment sign for train or attack
     # train_model(model, input_file_list, max_len, epoch=30)
+    # train_gen_wrapper(model, input_file_list, max_len, epoch=30)
     # run_attack(model, adv_file_list, max_len)
     # eval_acc = evaluate(model, input_file_list)
 
