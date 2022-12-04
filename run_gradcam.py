@@ -110,6 +110,9 @@ def save_and_display_gradcam(img_path, heatmap, cam_path="cam.jpg", alpha=0.4):
     display(Image(cam_path))
 
 def run_gradcam(img_path, img_size, model, last_conv_layer_name):
+    preprocess_input = keras.applications.xception.preprocess_input
+    decode_predictions = keras.applications.xception.decode_predictions
+
     # Prepare image
     img_array = preprocess_input(get_img_array(img_path, size=img_size))
 
