@@ -6,6 +6,7 @@ from malconv import create_model
 from train import train_model
 from run_attack import run_attack
 from run_gradcam import run_gradcam_test
+from run_pca import pca
 import tensorflow as tf
 tf.config.run_functions_eagerly(True)
 tf.data.experimental.enable_debug_mode()
@@ -21,8 +22,10 @@ if __name__ == '__main__':
     print(model.summary())
 
     # test gradcam with model
-    run_gradcam_test(model)
+    # run_gradcam_test(model)
 
+    pca(model, 'adv_malware_benign_PCA.csv')
+ 
     #input_file_list = 'DikeDataset/data_label_200.csv'
     adv_file_list = 'DikeDataset/adv_label_new.csv'
     input_file_list = 'training_datasets/output/combined.csv'
