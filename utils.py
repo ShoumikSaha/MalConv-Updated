@@ -1,5 +1,5 @@
 import numpy as np
-
+from preprocess import preprocess
 
 def train_test_split(data, label, val_size=0.1):
     idx = np.arange(len(data))
@@ -8,3 +8,15 @@ def train_test_split(data, label, val_size=0.1):
     x_train, x_test = data[idx[split:]], data[idx[:split]]
     y_train, y_test = label[idx[split:]], label[idx[:split]]
     return x_train, x_test, y_train, y_test
+
+def data_generator(data, labels, max_len=200000, batch_size=64, shuffle=True):
+    idx = np.arange(len(data))
+    if shuffle:
+        np.random.shuffle(idx)
+    batches = [idx[range(batch_size*i, min(len(data), batch_size*(i+1)))] for i in range(len(data)//batch_size+1)]
+    while True:
+        for i in batches:
+            xx = preprocess(data[i], max_len)[0]
+            yy = labels[i]
+            yield (xx, yy)
+
