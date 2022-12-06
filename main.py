@@ -24,7 +24,7 @@ if __name__ == '__main__':
     # test gradcam with model
     # run_gradcam_test(model)
 
-    pca(model, 'adv_malware_benign_PCA.csv')
+    pca(model, 'FullDataset/output/adv_malware_benign_PCA.csv')
  
     #input_file_list = 'DikeDataset/data_label_200.csv'
     adv_file_list = 'DikeDataset/adv_label_new.csv'
